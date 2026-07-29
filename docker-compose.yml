@@ -7,8 +7,8 @@ services:
     restart: always
 
     environment:
-      - MYSQL_ROOT_PASSWORD=Neueda@123
-      - MYSQL_DATABASE=company
+      MYSQL_ROOT_PASSWORD: Neueda@123
+      MYSQL_DATABASE: company
 
     ports:
       - "3306:3306"
@@ -17,14 +17,22 @@ services:
       - mysql-data:/var/lib/mysql
 
     networks:
-      - springboot-network
+      - springboot-network-jdbc
+
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-pNeueda@123"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
 
   springboot-app:
     build: .
     container_name: springboot-container-jdbc
+    restart: always
 
     depends_on:
-      - mysql
+      mysql:
+        condition: service_healthy
 
     environment:
       SPRING_PROFILES_ACTIVE: docker
@@ -36,11 +44,11 @@ services:
       - "8082:8082"
 
     networks:
-      - springboot-jdbc-network
+      - springboot-network-jdbc
 
 volumes:
   mysql-data:
 
 networks:
-  springboot-network:
-  
+  springboot-network-jdbc:
+    driver: bridge
