@@ -3,7 +3,7 @@ version: "3.8"
 services:
   mysql:
     image: mysql:8.4
-    container_name: mysql-container
+    container_name: mysql-container-jdbc
     restart: always
 
     environment:
@@ -21,7 +21,7 @@ services:
 
   springboot-app:
     build: .
-    container_name: springboot-container
+    container_name: springboot-container-jdbc
 
     depends_on:
       - mysql
