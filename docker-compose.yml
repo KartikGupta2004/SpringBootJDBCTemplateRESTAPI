@@ -36,7 +36,7 @@ services:
       - "8082:8082"
 
     networks:
-      - springboot-network
+      - springboot-jdbc-network
 
 volumes:
   mysql-data:
