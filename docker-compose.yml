@@ -7,8 +7,8 @@ services:
     restart: always
 
     environment:
-      MYSQL_ROOT_PASSWORD: neueda@123
-      MYSQL_DATABASE: neueda_db
+      MYSQL_ROOT_PASSWORD: Nikunj@123
+      MYSQL_DATABASE: company
 
     ports:
       - "3306:3306"
@@ -28,9 +28,9 @@ services:
 
     environment:
       SPRING_PROFILES_ACTIVE: docker
-      DB_URL: jdbc:mysql://mysql:3306/neueda_db
+      DB_URL: jdbc:mysql://mysql:3306/company
       DB_USER: root
-      DB_PASS: neueda@123
+      DB_PASS: Nikunj@123
 
     ports:
       - "8082:8082"
