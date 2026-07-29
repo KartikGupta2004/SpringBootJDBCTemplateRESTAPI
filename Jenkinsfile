@@ -3,7 +3,7 @@ pipeline {
     agent any
 
     environment {
-        GIT_URL = 'https://github.com/Nikunj-Java/SpringBootDev.git'
+        GIT_URL = 'https://github.com/Nikunj-Java/SpringBootJDBCTemplateRESTAPI.git'
         BRANCH = 'main'
     }
 
