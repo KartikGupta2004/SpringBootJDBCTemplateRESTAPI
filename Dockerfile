@@ -23,7 +23,7 @@ ENTRYPOINT ["java","-jar","app.jar"]
 RUN rm -rf /usr/share/nginx/html/*
 
 # Copy your website
-COPY index.html /usr/share/nginx/html/
+COPY nginx/index.html /usr/share/nginx/html/
 
 # Expose HTTP port
 EXPOSE 80
