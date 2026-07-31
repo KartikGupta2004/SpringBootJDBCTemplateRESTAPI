@@ -4,7 +4,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Customer Management</title>
+    <title>Employee Management</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet"
           integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
     <style>
@@ -23,45 +23,50 @@
 
 <body>
 <div class="container">
-    <h1 class="text-center mb-4">Customer Management</h1>
+    <h1 class="text-center mb-4">Employee Management</h1>
 
-    <!-- Add Customer Form -->
+    <!-- Add Employee Form -->
     <div class="card card-custom">
         <div class="card-header">
-            <h5>Add a New Customer</h5>
+            <h5>Add a New Employee</h5>
         </div>
         <div class="card-body">
-            <form id="addCustomerForm">
+            <form id="addEmployeeForm">
                 <div class="mb-3">
                     <label for="name" class="form-label">Name</label>
                     <input type="text" class="form-control" id="name" required>
                 </div>
                 <div class="mb-3">
-                    <label for="email" class="form-label">Email</label>
-                    <input type="email" class="form-control" id="email" required>
+                    <label for="department" class="form-label">Department</label>
+                    <input type="text" class="form-control" id="department" required>
                 </div>
-                <button type="submit" class="btn btn-primary">Add Customer</button>
+                <div class="mb-3">
+                    <label for="salary" class="form-label">Salary</label>
+                    <input type="number" class="form-control" id="salary" required>
+                </div>
+                <button type="submit" class="btn btn-primary" id="submitButton">Add Employee</button>
             </form>
         </div>
     </div>
 
-    <!-- Customer List Table -->
+    <!-- Employee List Table -->
     <div class="card card-custom">
         <div class="card-header">
-            <h5>Customer List</h5>
+            <h5>Employee List</h5>
         </div>
         <div class="card-body">
-            <table class="table table-bordered" id="customerTable">
+            <table class="table table-bordered" id="employeeTable">
                 <thead>
                 <tr>
                     <th>Id</th>
                     <th>Name</th>
-                    <th>Email</th>
+                    <th>Department</th>
+                    <th>Salary</th>
                     <th>Actions</th>
                 </tr>
                 </thead>
-                <tbody id="customerTableBody">
-                <!-- Customer rows will be injected here -->
+                <tbody id="employeeTableBody">
+                <!-- Employee rows will be injected here -->
                 </tbody>
             </table>
         </div>
@@ -69,89 +74,151 @@
 </div>
 
 <script>
-    const apiUrl = 'http://localhost:8082/api/v1/customers/';  // Update with your actual API URL
-    let editingCustomerId = null;
+    const apiUrl = 'http://localhost:8082/api/v1/employee/';
+    let editingEmployeeId = null;
 
-    // Function to fetch and display customers
-    function fetchCustomers() {
+    // Function to fetch and display employees
+    function fetchEmployees() {
         fetch(apiUrl)
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+                return response.json();
+            })
             .then(data => {
-                const tableBody = document.getElementById('customerTableBody');
-                tableBody.innerHTML = '';  // Clear previous data
-                data.forEach(customer => {
+                const tableBody = document.getElementById('employeeTableBody');
+                tableBody.innerHTML = '';
+
+                // Normalize API response to an array
+                const employees = Array.isArray(data)
+                    ? data
+                    : Array.isArray(data?.content)
+                        ? data.content
+                        : Array.isArray(data?.data)
+                            ? data.data
+                            : Array.isArray(data?.employees)
+                                ? data.employees
+                                : [];
+
+                if (!Array.isArray(data)) {
+                    console.warn('Unexpected employee payload shape:', data);
+                }
+
+                employees.forEach(employee => {
                     const row = document.createElement('tr');
-                    row.innerHTML = `
-                        <td>${customer.id}</td>
-                        <td>${customer.name}</td>
-                        <td>${customer.email}</td>
-                        <td class="action-buttons">
-                            <button class="btn btn-warning btn-sm" onclick="editCustomer(${customer.id}, '${customer.name}', '${customer.email}')">Edit</button>
-                            <button class="btn btn-danger btn-sm" onclick="deleteCustomer(${customer.id})">Delete</button>
-                        </td>
-                    `;
+
+                    const idCell = document.createElement('td');
+                    idCell.textContent = employee.id;
+                    row.appendChild(idCell);
+
+                    const nameCell = document.createElement('td');
+                    nameCell.textContent = employee.name;
+                    row.appendChild(nameCell);
+
+                    const departmentCell = document.createElement('td');
+                    departmentCell.textContent = employee.department;
+                    row.appendChild(departmentCell);
+
+                    const salaryCell = document.createElement('td');
+                    salaryCell.textContent = employee.salary;
+                    row.appendChild(salaryCell);
+
+                    const actionsCell = document.createElement('td');
+                    actionsCell.className = 'action-buttons';
+
+                    const editBtn = document.createElement('button');
+                    editBtn.className = 'btn btn-warning btn-sm';
+                    editBtn.textContent = 'Edit';
+                    editBtn.addEventListener('click', () => {
+                        editEmployee(employee.id, employee.name, employee.department, employee.salary);
+                    });
+
+                    const deleteBtn = document.createElement('button');
+                    deleteBtn.className = 'btn btn-danger btn-sm';
+                    deleteBtn.textContent = 'Delete';
+                    deleteBtn.addEventListener('click', () => {
+                        deleteEmployee(employee.id);
+                    });
+
+                    actionsCell.appendChild(editBtn);
+                    actionsCell.appendChild(deleteBtn);
+                    row.appendChild(actionsCell);
+
                     tableBody.appendChild(row);
                 });
             })
-            .catch(error => console.error('Error fetching customers:', error));
+            .catch(error => console.error('Error fetching employees:', error));
     }
 
-    // Function to add a new customer
-    document.getElementById('addCustomerForm').addEventListener('submit', function(event) {
-        event.preventDefault();  // Prevent default form submission
-        const name = document.getElementById('name').value;
-        const email = document.getElementById('email').value;
+    // Function to add or update an employee
+    document.getElementById('addEmployeeForm').addEventListener('submit', function (event) {
+        event.preventDefault();
 
-        const newCustomer = {
-            name: name,
-            email: email
+        const name = document.getElementById('name').value.trim();
+        const department = document.getElementById('department').value.trim();
+        const salary = Number(document.getElementById('salary').value);
+
+        const employeePayload = {
+            name,
+            department,
+            salary
         };
 
-        const method = editingCustomerId ? 'PUT' : 'POST';
-        const url = editingCustomerId ? `${apiUrl}${editingCustomerId}` : apiUrl;
+        const method = editingEmployeeId ? 'PUT' : 'POST';
+        const url = editingEmployeeId ? `${apiUrl}${editingEmployeeId}` : apiUrl;
 
         fetch(url, {
             method: method,
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify(newCustomer)
+            body: JSON.stringify(employeePayload)
         })
-            .then(response => response.json())
-            .then(data => {
-                alert(editingCustomerId ? 'Customer updated successfully' : 'Customer added successfully');
-                fetchCustomers();  // Refresh customer list after adding or updating
-                document.getElementById('addCustomerForm').reset();  // Reset form
-                editingCustomerId = null;  // Clear editing flag
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+                return response.json().catch(() => ({}));
             })
-            .catch(error => console.error('Error adding/updating customer:', error));
+            .then(() => {
+                alert(editingEmployeeId ? 'Employee updated successfully' : 'Employee added successfully');
+                fetchEmployees();
+                document.getElementById('addEmployeeForm').reset();
+                editingEmployeeId = null;
+                document.getElementById('submitButton').textContent = 'Add Employee';
+            })
+            .catch(error => console.error('Error adding/updating employee:', error));
     });
 
-    // Function to edit a customer
-    function editCustomer(id, name, email) {
-        editingCustomerId = id;
+    // Function to edit an employee
+    function editEmployee(id, name, department, salary) {
+        editingEmployeeId = id;
         document.getElementById('name').value = name;
-        document.getElementById('email').value = email;
-        // Change the submit button text to 'Update Customer'
-        document.querySelector('button[type="submit"]').textContent = 'Update Customer';
+        document.getElementById('department').value = department;
+        document.getElementById('salary').value = salary;
+        document.getElementById('submitButton').textContent = 'Update Employee';
     }
 
-    // Function to delete a customer
-    function deleteCustomer(id) {
-        if (confirm('Are you sure you want to delete this customer?')) {
+    // Function to delete an employee
+    function deleteEmployee(id) {
+        if (confirm('Are you sure you want to delete this employee?')) {
             fetch(`${apiUrl}${id}`, {
                 method: 'DELETE'
             })
-                .then(() => {
-                    alert('Customer deleted successfully');
-                    fetchCustomers();  // Refresh customer list after deletion
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}`);
+                    }
+                    alert('Employee deleted successfully');
+                    fetchEmployees();
                 })
-                .catch(error => console.error('Error deleting customer:', error));
+                .catch(error => console.error('Error deleting employee:', error));
         }
     }
 
-    // Initial fetch to load customers
-    fetchCustomers();
+    // Initial fetch to load employees
+    fetchEmployees();
 </script>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"
